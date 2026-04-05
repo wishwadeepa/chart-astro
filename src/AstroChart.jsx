@@ -1,16 +1,18 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Body, GeoVector, Observer, Equator, Ecliptic } from 'astronomy-engine';
+import { Body, GeoVector, Ecliptic } from 'astronomy-engine';
 
 const PLANETS = [
-  { name: 'Sun', symbol: 'M16.5 8.25A8.25 8.25 0 1 1 0 8.25a8.25 8.25 0 0 1 16.5 0ZM8.25 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z', body: Body.Sun, color: '#FFD700' },
-  { name: 'Moon', symbol: 'M13.625 15.11a8.25 8.25 0 0 1-5.375-7.61V7.5a8.25 8.25 0 1 0 6.671 13.065l-.369-.475-1.074-1.383.147-3.597Z', body: Body.Moon, color: '#C0C0C0' },
-  { name: 'Mercury', symbol: 'M8.25 3.375a3.375 3.375 0 1 0 0 6.75 3.375 3.375 0 0 0 0-6.75Zm0 7.5a4.125 4.125 0 1 1 0-8.25 4.125 4.125 0 0 1 0 8.25ZM8.25 10.875v4.5M5.25 13.125h6M4.5 4.5a3.75 3.75 0 0 1 7.5 0', body: Body.Mercury, color: '#B87333' },
-  { name: 'Venus', symbol: 'M8.25 3.375a4.125 4.125 0 1 0 0 8.25 4.125 4.125 0 0 0 0-8.25Zm0 9v4.5M5.25 14.625h6', body: Body.Venus, color: '#EEDC82' },
-  { name: 'Mars', symbol: 'M12 4.5l3-3m0 0h-3m3 0v3M8.25 6.375a4.125 4.125 0 1 0 0 8.25 4.125 4.125 0 0 0 0-8.25Zm0 0l4.5-4.5', body: Body.Mars, color: '#FF4500' },
-  { name: 'Jupiter', symbol: 'M4.5 3.75v3a4.5 4.5 0 0 0 4.5 4.5h3m0-7.5v12m-3-3h6', body: Body.Jupiter, color: '#DAA520' },
-  { name: 'Saturn', symbol: 'M8.25 3.75v8.25m-3-3h6m-3-8.25a3 3 0 0 1 3 3v4.5a3 3 0 0 0 3 3', body: Body.Saturn, color: '#F4A460' },
-  { name: 'Uranus', symbol: 'M8.25 2.25v3m0 0v6m0-6h-3m3 0h3M8.25 11.25a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 6v3', body: Body.Uranus, color: '#ADD8E6' },
-  { name: 'Neptune', symbol: 'M4.5 4.5v3a3.75 3.75 0 0 0 3.75 3.75m3.75-6.75v3a3.75 3.75 0 0 1-3.75 3.75m0-6.75v12m-3-3h6', body: Body.Neptune, color: '#4169E1' },
+  { name: 'Sun', symbol: 'M16.5 8.25A8.25 8.25 0 1 1 0 8.25a8.25 8.25 0 0 1 16.5 0ZM8.25 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z', body: Body.Sun, color: '#FFD700', isNode: false },
+  { name: 'Moon', symbol: 'M13.625 15.11a8.25 8.25 0 0 1-5.375-7.61V7.5a8.25 8.25 0 1 0 6.671 13.065l-.369-.475-1.074-1.383.147-3.597Z', body: Body.Moon, color: '#C0C0C0', isNode: false },
+  { name: 'Mercury', symbol: 'M8.25 3.375a3.375 3.375 0 1 0 0 6.75 3.375 3.375 0 0 0 0-6.75Zm0 7.5a4.125 4.125 0 1 1 0-8.25 4.125 4.125 0 0 1 0 8.25ZM8.25 10.875v4.5M5.25 13.125h6M4.5 4.5a3.75 3.75 0 0 1 7.5 0', body: Body.Mercury, color: '#B87333', isNode: false },
+  { name: 'Venus', symbol: 'M8.25 3.375a4.125 4.125 0 1 0 0 8.25 4.125 4.125 0 0 0 0-8.25Zm0 9v4.5M5.25 14.625h6', body: Body.Venus, color: '#EEDC82', isNode: false },
+  { name: 'Mars', symbol: 'M12 4.5l3-3m0 0h-3m3 0v3M8.25 6.375a4.125 4.125 0 1 0 0 8.25 4.125 4.125 0 0 0 0-8.25Zm0 0l4.5-4.5', body: Body.Mars, color: '#FF4500', isNode: false },
+  { name: 'Jupiter', symbol: 'M4.5 3.75v3a4.5 4.5 0 0 0 4.5 4.5h3m0-7.5v12m-3-3h6', body: Body.Jupiter, color: '#DAA520', isNode: false },
+  { name: 'Saturn', symbol: 'M8.25 3.75v8.25m-3-3h6m-3-8.25a3 3 0 0 1 3 3v4.5a3 3 0 0 0 3 3', body: Body.Saturn, color: '#F4A460', isNode: false },
+  { name: 'Uranus', symbol: 'M8.25 2.25v3m0 0v6m0-6h-3m3 0h3M8.25 11.25a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0 6v3', body: Body.Uranus, color: '#ADD8E6', isNode: false },
+  { name: 'Neptune', symbol: 'M4.5 4.5v3a3.75 3.75 0 0 0 3.75 3.75m3.75-6.75v3a3.75 3.75 0 0 1-3.75 3.75m0-6.75v12m-3-3h6', body: Body.Neptune, color: '#4169E1', isNode: false },
+  { name: 'Rahu (North Node)', symbol: 'M4.5 12c0-2 2-5 3.75-5S12 10 12 12s-2 5-3.75 5S4.5 14 4.5 12zm0 0a3.75 3.75 0 0 1 7.5 0M2.25 7.5c1.5-3 3-4.5 6-4.5s4.5 1.5 6 4.5', color: '#B0C4DE', isNode: true, nodeType: 'north' },
+  { name: 'Ketu (South Node)', symbol: 'M4.5 4.5c0 2 2 5 3.75 5S12 6.5 12 4.5s-2-5-3.75-5S4.5 2.5 4.5 4.5zm0 0a3.75 3.75 0 0 0 7.5 0M2.25 9c1.5 3 3 4.5 6 4.5s4.5-1.5 6-4.5', color: '#8A9A5B', isNode: true, nodeType: 'south' }
 ];
 
 const ZODIAC_SYMBOLS = [
@@ -30,30 +32,72 @@ const ZODIAC_SYMBOLS = [
 
 const ROMAN_NUMERALS = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
 
+// Calculate the precise Ascendant (Rising Sign) based on location and exact time
+const calculateAscendant = (dateObj, lat, lng) => {
+  // Julian Date
+  const jd = dateObj.getTime() / 86400000 + 2440587.5;
+  const t = (jd - 2451545.0) / 36525.0;
+  
+  // Greenwich Mean Sidereal Time in degrees
+  let gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0) + 0.000387933 * t * t - (t * t * t) / 38710000.0;
+  gmst = gmst % 360;
+  if (gmst < 0) gmst += 360;
+  
+  // Local Sidereal Time in degrees
+  let lst = (gmst + lng) % 360;
+  if (lst < 0) lst += 360;
+  
+  // Obliquity of the ecliptic
+  const eps = (23.4392911 - 0.0130042 * t) * (Math.PI / 180);
+  
+  const radLST = lst * (Math.PI / 180);
+  const radLat = lat * (Math.PI / 180);
+  
+  const y = Math.cos(radLST);
+  const x = -Math.sin(radLST) * Math.cos(eps) - Math.tan(radLat) * Math.sin(eps);
+  
+  let ascendantDeg = Math.atan2(y, x) * (180 / Math.PI);
+  return (ascendantDeg + 360) % 360;
+};
+
 const calculatePositions = (dateStr, timeStr, lat, lng) => {
-  if (!dateStr || !timeStr || !lat || !lng) return null;
+  if (!dateStr || !timeStr || lat === null || lng === null) return null;
 
   try {
     const dateObj = new Date(`${dateStr}T${timeStr}`);
     if (isNaN(dateObj.getTime())) return null;
 
-    const observer = new Observer(parseFloat(lat), parseFloat(lng), 0);
-    const sunEcl = Ecliptic(GeoVector(Body.Sun, dateObj, false));
-    const ascendantLon = (sunEcl.elon + 90) % 360; // Approximation
+    // Use accurate local ascendant calculation 
+    const ascendantLon = calculateAscendant(dateObj, parseFloat(lat), parseFloat(lng));
+    
+    // Calculate mean lunar nodes (Rahu / North Node & Ketu / South Node)
+    const T = (dateObj.getTime() / 86400000 + 2440587.5 - 2451545.0) / 36525;
+    let omega = 125.04452 - 1934.136261 * T + 0.0020708 * T * T + (T * T * T) / 450000;
+    omega = omega % 360;
+    if (omega < 0) omega += 360;
+    const ketu = (omega + 180) % 360;
 
     const positions = PLANETS.map(planet => {
-      const vec = GeoVector(planet.body, dateObj, false);
-      const ecl = Ecliptic(vec);
-      let relativeLon = (ecl.elon - ascendantLon + 360) % 360;
+      let rawLon;
+      
+      if (planet.isNode) {
+        rawLon = planet.nodeType === 'north' ? omega : ketu;
+      } else {
+        const vec = GeoVector(planet.body, dateObj, false);
+        const ecl = Ecliptic(vec);
+        rawLon = ecl.elon;
+      }
+      
+      let relativeLon = (rawLon - ascendantLon + 360) % 360;
+      
       return {
         ...planet,
         lon: relativeLon,
-        rawLon: ecl.elon
+        rawLon: rawLon
       };
     });
 
     // Symbol Collision Logic (Stelliums)
-    // Sort by longitude, check for overlaps within 6 degrees
     const sorted = [...positions].map((p, i) => ({ ...p, originalIndex: i })).sort((a, b) => a.lon - b.lon);
     const collisionDistances = new Array(positions.length).fill(88);
     
@@ -64,7 +108,6 @@ const calculatePositions = (dateStr, timeStr, lat, lng) => {
         if (diff > 180) diff = 360 - diff;
         if (diff < 6) overlapCount++;
       }
-      // Nudge outward by 16 units for each overlapping planet
       collisionDistances[sorted[i].originalIndex] = 88 + (overlapCount * 16);
     }
 
@@ -107,29 +150,30 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
     
     for (let i = 0; i < positions.length; i++) {
       for (let j = i + 1; j < positions.length; j++) {
+        if (positions[i].isNode && positions[j].isNode) continue;
+
         const diff = Math.abs(positions[i].lon - positions[j].lon);
         const diffMod = Math.min(diff, 360 - diff);
         
         let isAspect = false;
         let opacity = 0;
-        let color = "rgba(212, 175, 55, 0.5)"; // Deep Gold for harmonious
+        let color = "rgba(212, 175, 55, 0.5)"; 
         let strokeWidth = "0.75";
         
         if (Math.abs(diffMod - 120) < 5) { 
-          isAspect = true; opacity = 0.5; strokeWidth = "1.5"; // Trine (Harmonious)
+          isAspect = true; opacity = 0.5; strokeWidth = "1.5"; 
         } 
         else if (Math.abs(diffMod - 90) < 5) { 
-          isAspect = true; opacity = 0.5; color = "rgba(160, 165, 170, 0.5)"; strokeWidth = "1.5"; // Square (Challenging - Steel/Silver)
+          isAspect = true; opacity = 0.5; color = "rgba(160, 165, 170, 0.5)"; strokeWidth = "1.5"; 
         } 
         else if (Math.abs(diffMod - 180) < 5) { 
-          isAspect = true; opacity = 0.6; color = "rgba(160, 165, 170, 0.6)"; strokeWidth = "1.5"; // Opposition (Challenging)
+          isAspect = true; opacity = 0.6; color = "rgba(160, 165, 170, 0.6)"; strokeWidth = "1.5"; 
         } 
         else if (Math.abs(diffMod - 60) < 5) { 
-          isAspect = true; opacity = 0.4; strokeWidth = "0.75"; // Sextile (Harmonious minor)
+          isAspect = true; opacity = 0.4; strokeWidth = "0.75"; 
         }
 
         if (isAspect) {
-          // Lines connect to the inner ring, not the planet symbols themselves to reduce clutter
           const r1 = 75; 
           const a1 = ((positions[i].lon + 180) * Math.PI) / 180;
           const x1 = 200 + r1 * Math.cos(a1);
@@ -164,7 +208,6 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
     <div className={className} style={{ width: '100%', height: '100%', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
         <defs>
-          {/* Radial gradient from dark navy/charcoal to transparent (to blend into solid black background) */}
           <radialGradient id="depthGrad" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#1a1c23" />
             <stop offset="100%" stopColor="#0b0c10" />
@@ -175,18 +218,15 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
             <stop offset="100%" stopColor="transparent" />
           </radialGradient>
 
-          {/* Desaturated glow for icons */}
           <filter id="iconGlow" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="2" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
         
-        {/* Background Depth Gradient */}
         <circle cx="200" cy="200" r="190" fill="url(#depthGrad)" />
         <circle cx="200" cy="200" r="190" fill="url(#goldGlow)" style={{ transition: 'opacity 2s', opacity: isComplete ? 1 : 0.2 }} />
         
-        {/* Rings - Geometric Balance */}
         <g style={{ transition: 'opacity 1s', opacity: isComplete ? 1 : 0.1 }}>
           <circle cx="200" cy="200" r="180" fill="none" stroke="#d4af37" strokeWidth="0.5" opacity="0.8" />
           <circle cx="200" cy="200" r="176" fill="none" stroke="#d4af37" strokeWidth="0.25" opacity="0.6" />
@@ -195,17 +235,14 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
           <circle cx="200" cy="200" r="75" fill="none" stroke="#d4af37" strokeWidth="0.25" opacity="0.4" />
         </g>
         
-        {/* Zodiac divisions (12 houses) & Roman Numerals */}
         <g style={{ transition: 'opacity 1.5s', opacity: isComplete ? 1 : 0 }}>
           {[...Array(12)].map((_, i) => {
             const angle = (i * 30 * Math.PI) / 180;
-            // House lines
             const x1 = 200 + 75 * Math.cos(angle);
             const y1 = 200 + 75 * Math.sin(angle);
             const x2 = 200 + 180 * Math.cos(angle);
             const y2 = 200 + 180 * Math.sin(angle);
             
-            // Roman Numeral placement (in the middle of the inner ring segment)
             const numAngle = ((i * 30 + 15) * Math.PI) / 180;
             const numX = 200 + 65 * Math.cos(numAngle);
             const numY = 200 + 65 * Math.sin(numAngle);
@@ -221,7 +258,6 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
           })}
         </g>
         
-        {/* Zodiac Symbols */}
         <g style={{ transition: 'opacity 2s', opacity: isComplete ? 1 : 0 }}>
           {ZODIAC_SYMBOLS.map((pathStr, i) => {
             const ascendantOffset = astroData ? astroData.ascendantLon : 0;
@@ -237,13 +273,11 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
           })}
         </g>
 
-        {/* Outer degree dots */}
         <g style={{ transition: 'opacity 1s', opacity: isComplete ? 1 : 0 }}>
           {[...Array(72)].map((_, i) => {
             const angle = (i * 5 * Math.PI) / 180;
             const x = 200 + 178 * Math.cos(angle);
             const y = 200 + 178 * Math.sin(angle);
-            // Highlight every 30 degrees (zodiac boundaries)
             const isMajor = i % 6 === 0;
             return (
               <circle key={`dot-${i}`} cx={x} cy={y} r={isMajor ? "1.5" : "0.75"} fill="#d4af37" opacity={isMajor ? "0.9" : "0.5"} />
@@ -251,17 +285,14 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
           })}
         </g>
 
-        {/* Aspect lines */}
         {aspects}
         
-        {/* Center crosshair */}
         <g style={{ transition: 'opacity 0.5s', opacity: isComplete ? 1 : 0 }}>
           <circle cx="200" cy="200" r="2" fill="#d4af37" opacity="0.8" />
           <line x1="195" y1="200" x2="205" y2="200" stroke="#d4af37" strokeWidth="0.5" opacity="0.5" />
           <line x1="200" y1="195" x2="200" y2="205" stroke="#d4af37" strokeWidth="0.5" opacity="0.5" />
         </g>
 
-        {/* Inner planetary symbols */}
         <g style={{ transition: 'opacity 1s', opacity: showPlanets ? 1 : 0 }}>
           {displayPositions.map((planet, i) => {
             const angle = ((planet.lon + 180) * Math.PI) / 180;
@@ -275,13 +306,10 @@ const AstroChart = ({ className, dateStr, timeStr, lat, lng, isComplete }) => {
                 transform={`translate(${x-8}, ${y-8})`} 
                 style={{ transition: 'all 2s ease-out' }}
               >
-                {/* Connecting line to center */}
                 <line x1={8 - x + 200} y1={8 - y + 200} x2={8 - (200 + 75 * Math.cos(angle)) + x} y2={8 - (200 + 75 * Math.sin(angle)) + y} stroke={planet.color} strokeWidth="0.25" opacity="0.2" />
                 
-                {/* Desaturated subtle background circle to ensure readability against aspect lines */}
                 <circle cx="8" cy="8" r="9" fill="#111218" opacity="0.9" />
                 
-                {/* High-res SVG path with subtle glow */}
                 <path 
                   d={planet.symbol} 
                   fill="none" 

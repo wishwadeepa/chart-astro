@@ -2,6 +2,16 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import './App.css';
 import AstroChart from './AstroChart';
 
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 120 }, (_, i) => currentYear - i);
+const MONTHS = [
+  { name: 'January', val: '01' }, { name: 'February', val: '02' }, { name: 'March', val: '03' }, 
+  { name: 'April', val: '04' }, { name: 'May', val: '05' }, { name: 'June', val: '06' },
+  { name: 'July', val: '07' }, { name: 'August', val: '08' }, { name: 'September', val: '09' }, 
+  { name: 'October', val: '10' }, { name: 'November', val: '11' }, { name: 'December', val: '12' }
+];
+const DATES = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+
 function App() {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -17,6 +27,7 @@ function App() {
   const [geoData, setGeoData] = useState({ lat: null, lng: null });
   const [isComplete, setIsComplete] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   
   const cardRef = useRef(null);
 
@@ -29,16 +40,48 @@ function App() {
     }
   }, [formData.birthLocation]);
 
+  // Geocode location whenever it changes (with a simple debounce)
   useEffect(() => {
-    const isReady = !!(formData.birthYear && formData.birthMonth && formData.birthDate && formData.birthTime);
+    const isReady = !!(formData.birthYear && formData.birthMonth && formData.birthDate && formData.birthTime && formData.birthLocation.trim().length > 2);
     
-    if (isReady && !isComplete) {
-      setGeoData({ lat: 40.7128, lng: -74.0060 }); 
-      setIsComplete(true);
-    } else if (!isReady && isComplete) {
+    if (isReady) {
+      const fetchGeo = async () => {
+        setIsGeocoding(true);
+        try {
+          // Using a free, public openstreetmap geocoding API for demonstration
+          // In a real app, use Google Maps API or Mapbox
+          const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.birthLocation)}&limit=1`);
+          const data = await response.json();
+          
+          if (data && data.length > 0) {
+            setGeoData({ 
+              lat: parseFloat(data[0].lat), 
+              lng: parseFloat(data[0].lon) 
+            });
+            setIsComplete(true);
+          } else {
+            // Default fallback if location not found
+            setGeoData({ lat: 40.7128, lng: -74.0060 });
+            setIsComplete(true);
+          }
+        } catch (error) {
+          console.error("Geocoding failed", error);
+          setGeoData({ lat: 40.7128, lng: -74.0060 });
+          setIsComplete(true);
+        } finally {
+          setIsGeocoding(false);
+        }
+      };
+
+      const timer = setTimeout(() => {
+        fetchGeo();
+      }, 1000); // 1s debounce
+
+      return () => clearTimeout(timer);
+    } else {
       setIsComplete(false);
     }
-  }, [formData, isComplete]);
+  }, [formData.birthYear, formData.birthMonth, formData.birthDate, formData.birthTime, formData.birthLocation]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,24 +120,14 @@ function App() {
     }
   };
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 120 }, (_, i) => currentYear - i);
-  const months = [
-    { name: 'January', val: '01' }, { name: 'February', val: '02' }, { name: 'March', val: '03' }, 
-    { name: 'April', val: '04' }, { name: 'May', val: '05' }, { name: 'June', val: '06' },
-    { name: 'July', val: '07' }, { name: 'August', val: '08' }, { name: 'September', val: '09' }, 
-    { name: 'October', val: '10' }, { name: 'November', val: '11' }, { name: 'December', val: '12' }
-  ];
-  const dates = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
-
   const dateStr = useMemo(() => {
     if (formData.birthYear && formData.birthMonth && formData.birthDate) {
-      const monthObj = months.find(m => m.name === formData.birthMonth);
+      const monthObj = MONTHS.find(m => m.name === formData.birthMonth);
       const m = monthObj ? monthObj.val : '01';
       return `${formData.birthYear}-${m}-${formData.birthDate}`;
     }
     return null;
-  }, [formData.birthYear, formData.birthMonth, formData.birthDate, months]);
+  }, [formData.birthYear, formData.birthMonth, formData.birthDate]);
 
   return (
     <div className="app-container">
@@ -128,7 +161,7 @@ function App() {
             <label>Year</label>
             <select name="birthYear" value={formData.birthYear} onChange={handleInputChange}>
               <option value="">Year</option>
-              {years.map(year => <option key={year} value={year}>{year}</option>)}
+              {YEARS.map(year => <option key={year} value={year}>{year}</option>)}
             </select>
           </div>
           
@@ -136,7 +169,7 @@ function App() {
             <label>Month</label>
             <select name="birthMonth" value={formData.birthMonth} onChange={handleInputChange}>
               <option value="">Month</option>
-              {months.map(month => <option key={month.name} value={month.name}>{month.name}</option>)}
+              {MONTHS.map(month => <option key={month.name} value={month.name}>{month.name}</option>)}
             </select>
           </div>
           
@@ -144,7 +177,7 @@ function App() {
             <label>Date</label>
             <select name="birthDate" value={formData.birthDate} onChange={handleInputChange}>
               <option value="">Date</option>
-              {dates.map(date => <option key={date} value={date}>{date}</option>)}
+              {DATES.map(date => <option key={date} value={date}>{date}</option>)}
             </select>
           </div>
         </div>
@@ -168,6 +201,7 @@ function App() {
             onChange={handleInputChange} 
             placeholder="City, Country"
           />
+          {isGeocoding && <span className="help-text" style={{color: '#d4af37'}}>Locating coordinates...</span>}
         </div>
 
         <div className="form-group">
@@ -185,7 +219,7 @@ function App() {
         <button 
           className="generate-btn" 
           onClick={handleDownload}
-          disabled={!isComplete || isGenerating}
+          disabled={!isComplete || isGenerating || isGeocoding}
         >
           {isGenerating ? 'GENERATING...' : 'GENERATE & DOWNLOAD'}
         </button>
