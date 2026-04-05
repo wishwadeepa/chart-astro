@@ -20,7 +20,6 @@ function App() {
   
   const cardRef = useRef(null);
 
-  // Auto-select astrology system based on location roughly
   useEffect(() => {
     const loc = formData.birthLocation.toLowerCase();
     if (loc.includes('sri lanka') || loc.includes('colombo') || loc.includes('kandy') || loc.includes('galle')) {
@@ -30,14 +29,11 @@ function App() {
     }
   }, [formData.birthLocation]);
 
-  // Check if enough data is present to generate a chart
   useEffect(() => {
     const isReady = !!(formData.birthYear && formData.birthMonth && formData.birthDate && formData.birthTime);
     
     if (isReady && !isComplete) {
-      // Simulate Geocoding since we don't have a real API key here.
-      // In a real app, you'd use Google Maps Geocoding API based on formData.birthLocation
-      setGeoData({ lat: 40.7128, lng: -74.0060 }); // Defaulting to NY for the astronomical calculation
+      setGeoData({ lat: 40.7128, lng: -74.0060 }); 
       setIsComplete(true);
     } else if (!isReady && isComplete) {
       setIsComplete(false);
@@ -199,6 +195,11 @@ function App() {
         <div className="poster-wrapper">
           <div className="poster-container" ref={cardRef}>
             <div className="poster-border">
+              {/* Technical Blueprint Corners */}
+              <div className="border-vertical-accents"></div>
+              <div className="corner-crosshairs"></div>
+              <div className="corner-crosshairs-bottom"></div>
+              
               <div className={`poster-header ${isComplete ? 'visible' : ''}`}>
                 <div className="poster-title">The Stars Above</div>
                 <div className="poster-subtitle">At the moment of your birth</div>
