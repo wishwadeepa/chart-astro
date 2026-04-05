@@ -31,25 +31,15 @@ function App() {
   
   const cardRef = useRef(null);
 
+  // Geocode location whenever it changes (with a 1 second debounce)
+  // This happens independently of the date/time fields so the astrology system can update immediately
   useEffect(() => {
-    const loc = formData.birthLocation.toLowerCase();
-    if (loc.includes('sri lanka') || loc.includes('colombo') || loc.includes('kandy') || loc.includes('galle')) {
-      setFormData(prev => ({ ...prev, astrologySystem: 'Sri Lankan Jyotishya' }));
-    } else if (loc.trim() !== '') {
-      setFormData(prev => ({ ...prev, astrologySystem: 'Western' }));
-    }
-  }, [formData.birthLocation]);
-
-  // Geocode location whenever it changes (with a simple debounce)
-  useEffect(() => {
-    const isReady = !!(formData.birthYear && formData.birthMonth && formData.birthDate && formData.birthTime && formData.birthLocation.trim().length > 2);
+    const locReady = formData.birthLocation.trim().length > 2;
     
-    if (isReady) {
+    if (locReady) {
       const fetchGeo = async () => {
         setIsGeocoding(true);
         try {
-          // Using a free, public openstreetmap geocoding API for demonstration
-          // In a real app, use Google Maps API or Mapbox
           const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.birthLocation)}&limit=1`);
           const data = await response.json();
           
@@ -58,16 +48,24 @@ function App() {
               lat: parseFloat(data[0].lat), 
               lng: parseFloat(data[0].lon) 
             });
-            setIsComplete(true);
+            
+            // The API returns a full display name (e.g. "Jaffna, Northern Province, Sri Lanka")
+            // We can use this to reliably auto-select the astrology system based on the actual country
+            const fullName = (data[0].display_name || '').toLowerCase();
+            
+            if (fullName.includes('sri lanka')) {
+              setFormData(prev => ({ ...prev, astrologySystem: 'Sri Lankan Jyotishya' }));
+            } else if (fullName.includes('india')) {
+              setFormData(prev => ({ ...prev, astrologySystem: 'Vedic' }));
+            } else {
+              setFormData(prev => ({ ...prev, astrologySystem: 'Western' }));
+            }
           } else {
-            // Default fallback if location not found
-            setGeoData({ lat: 40.7128, lng: -74.0060 });
-            setIsComplete(true);
+            // Fallback
+            setGeoData({ lat: null, lng: null });
           }
         } catch (error) {
           console.error("Geocoding failed", error);
-          setGeoData({ lat: 40.7128, lng: -74.0060 });
-          setIsComplete(true);
         } finally {
           setIsGeocoding(false);
         }
@@ -79,9 +77,23 @@ function App() {
 
       return () => clearTimeout(timer);
     } else {
-      setIsComplete(false);
+      setGeoData({ lat: null, lng: null });
     }
-  }, [formData.birthYear, formData.birthMonth, formData.birthDate, formData.birthTime, formData.birthLocation]);
+  }, [formData.birthLocation]);
+
+  // Check if we have all data required to render the chart
+  useEffect(() => {
+    const isReady = !!(
+      formData.birthYear && 
+      formData.birthMonth && 
+      formData.birthDate && 
+      formData.birthTime && 
+      geoData.lat !== null && 
+      geoData.lng !== null
+    );
+    
+    setIsComplete(isReady);
+  }, [formData.birthYear, formData.birthMonth, formData.birthDate, formData.birthTime, geoData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -212,7 +224,7 @@ function App() {
             <option value="Vedic">Vedic Astrology</option>
           </select>
           <span className="help-text">
-            Auto-selected based on location.
+            Auto-selected based on real-world location data.
           </span>
         </div>
 
